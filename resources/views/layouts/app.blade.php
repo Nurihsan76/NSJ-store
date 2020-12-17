@@ -42,6 +42,9 @@
                 <a class="navbar-brand" href="{{ url('/produk') }}">
                     Produk
                 </a>
+                {{-- <a class="navbar-brand" href="{{ url('/penjualan') }}">
+                    Penjualan
+                </a> --}}
                 <a class="navbar-brand" href="{{ url('/bulanan') }}">
                     Pemasukan
                 </a>

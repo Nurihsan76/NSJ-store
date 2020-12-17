@@ -33,6 +33,9 @@ class RiwayatHarianController extends Controller
      */
     public function create(Produk $produk)
     {
+        if ($produk->user_id != Auth::id()) {
+            return redirect('produk')->with('status', 'dilarang memanipulasi produk orang');
+        }
         return view('harian/tambah', compact('produk'));
     }
 
@@ -48,7 +51,7 @@ class RiwayatHarianController extends Controller
         $request->validate([
             'jumlah_produk' => 'required',
             'tanggal' => 'required'
-            ]);
+        ]);
 
         if ($produk->user_id != Auth::id()) {
             return redirect('harian')->with('status', 'dilarang memanipulasi produk orang');
@@ -85,8 +88,10 @@ class RiwayatHarianController extends Controller
         ]);
 
         $bulanan = RiwayatBulanan::where('user_id', Auth::id())->where('tanggal', $request->tanggal)->first();
-        $bulanan->pemasukan_hari_ini = $bulanan->pemasukan_hari_ini + $produk->harga * $request->jumlah_produk;
-        $bulanan->keuntungan_hari_ini =$bulanan->keuntungan_hari_ini + $produk->keuntungan * $request->jumlah_produk;
+        $bulanan->pemasukan_hari_ini = $riwayatHarian::whereHas('riwayat_bulanan', function($query) use ($request){
+            $query->where('tanggal', $request->tanggal);
+        })->sum('jumlah_harga_produk');
+        $bulanan->keuntungan_hari_ini = $bulanan->keuntungan_hari_ini + $produk->keuntungan * $request->jumlah_produk;
         $bulanan->update();
 
         $produk = Produk::where('id', $riwayatHarian->produk_id)->first();
@@ -115,7 +120,10 @@ class RiwayatHarianController extends Controller
      */
     public function edit(RiwayatHarian $riwayatHarian)
     {
-        //
+        if ($riwayatHarian->user_id != Auth::id()) {
+            return redirect('produk')->with('status', 'dilarang mengedit riwayat orang');
+        }
+        return view('harian/edit', compact('riwayatHarian'));
     }
 
     /**
@@ -127,7 +135,32 @@ class RiwayatHarianController extends Controller
      */
     public function update(Request $request, RiwayatHarian $riwayatHarian)
     {
-        //
+        $request->validate([
+            'jumlah_produk' => 'required',
+            'tanggal' => 'required',
+        ]);
+        if ($riwayatHarian->user_id != Auth::id()) {
+            return redirect('harian')->with('status', 'riwayat orang gagal diubah');
+        }
+
+        $produk = Produk::where('id', $riwayatHarian->produk_id)->first();
+        $produk->jumlah = $produk->jumlah - ($request->jumlah_produk - $riwayatHarian->jumlah_produk);
+        $produk->update();
+
+        $bulanan = RiwayatBulanan::where('user_id', Auth::id())->where('tanggal', $request->tanggal)->first();
+        $bulanan->pemasukan_hari_ini = $bulanan->pemasukan_hari_ini + $riwayatHarian->produk->harga * ($request->jumlah_produk - $riwayatHarian->jumlah_produk);
+        $bulanan->keuntungan_hari_ini = $bulanan->keuntungan_hari_ini + $riwayatHarian->produk->keuntungan * ($request->jumlah_produk - $riwayatHarian->jumlah_produk);
+        $bulanan->update();
+        
+        $riwayatHarian->produk_id = $riwayatHarian->produk_id;
+        $riwayatHarian->user_id = Auth::id();
+        $riwayatHarian->jumlah_produk = $request->jumlah_produk;
+        $riwayatHarian->jumlah_harga_produk = $request->jumlah_produk * $riwayatHarian->produk->harga;
+        $riwayatHarian->jumlah_keuntungan = $request->jumlah_produk * $riwayatHarian->produk->keuntungan;
+        $riwayatHarian->update();
+        
+        return redirect('harian')->with('status', 'Riwayat berhasil diubah');
+
     }
 
     /**
@@ -138,12 +171,69 @@ class RiwayatHarianController extends Controller
      */
     public function destroy(RiwayatHarian $riwayatHarian)
     {
-        //
+        if ($riwayatHarian->user_id != Auth::id()) {
+            return redirect('harian')->with('status', 'riwayat orang gagal dihapus');
+        }
+
+        $produk = Produk::where('id', $riwayatHarian->produk_id)->first();
+        $produk->jumlah = $produk->jumlah + $riwayatHarian->jumlah_produk;
+        $produk->update();
+
+        $bulanan = RiwayatBulanan::where('user_id', Auth::id())->where('tanggal', $riwayatHarian->riwayat_bulanan->tanggal)->first();
+        $bulanan->pemasukan_hari_ini = $bulanan->pemasukan_hari_ini - $riwayatHarian->jumlah_harga_produk;
+        $bulanan->keuntungan_hari_ini = $bulanan->keuntungan_hari_ini - $riwayatHarian->jumlah_keuntungan;
+        $bulanan->update();
+
+        RiwayatHarian::destroy($riwayatHarian->id);
+        return redirect('harian')->with('status', 'Riwayat berhasil dihapus');
     }
 
+    // /**
+    //  * Store a newly created resource in storage.
+    //  *
+    //  * @param  \Illuminate\Http\Request  $request
+    //  * @return \Illuminate\Http\Response
+    //  */
+    // public function cari(Request $request)
+    // {
+    //     $harian = RiwayatHarian::where('user_id', Auth::id())->orderBy('updated_at', 'desc')->paginate(10);
+    //     $produk = Produk::where('nama', 'like', '%'.$request->cari.'%')->orderBy('id', 'desc')->paginate(10);
+    //     return view('harian/index', compact('produk'));
+    // }    
+       
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function indexBulanan()
     {
-        $bulanan = RiwayatBulanan::where('user_id', Auth::id())->orderBy('updated_at', 'desc')->paginate(10);
+        $bulanan = RiwayatBulanan::where('user_id', Auth::id())->latest('updated_at')->paginate(10);
         return view('bulanan/index', compact('bulanan'));
     }
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function penjualan()
+    {
+        $produk = Produk::where('user_id', Auth::id())->orderBy('id', 'desc')->paginate(10);
+        return view('harian/penjualan', compact('produk'));
+    }
+
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function cariPenjualan(Request $request)
+    {
+        $produk = Produk::where('user_id', Auth::id())->where('nama', 'like', '%'.$request->cari.'%')->orderBy('id', 'desc')->paginate(10);
+        return view('harian/penjualan', compact('produk'));
+    }    
 }

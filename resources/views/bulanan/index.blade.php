@@ -24,8 +24,8 @@
               <tr>
                   <th scope="col">NO</th>
                   <th scope="col">Tanggal</th>
-                  <th scope="col">Pemasukan Hari Ini</th>
-                  <th scope="col">Keuntungan Hari Ini</th>
+                  <th scope="col">Pemasukan</th>
+                  <th scope="col">Keuntungan</th>
                 </tr>
             </thead>
             <tbody>

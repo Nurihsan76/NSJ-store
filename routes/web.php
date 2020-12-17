@@ -27,10 +27,17 @@ Route::post('/produk', 'ProdukController@store');
 Route::get('/produk/{produk}/edit', 'ProdukController@edit');
 Route::put('/produk/{produk}', 'ProdukController@update');
 Route::delete('/produk/{produk}', 'ProdukController@destroy');
+Route::post('/produk/cari', 'ProdukController@cari');
 
+Route::get('/penjualan', 'RiwayatHarianController@penjualan');
+Route::post('/penjualan/cari', 'RiwayatHarianController@cariPenjualan');
 
 Route::get('/harian', 'RiwayatHarianController@index');
 Route::get('/harian/{produk}', 'RiwayatHarianController@create');
 Route::post('/harian/{produk}', 'RiwayatHarianController@store');
+Route::get('/harian/{riwayatHarian}/edit', 'RiwayatHarianController@edit');
+Route::put('/harian/{riwayatHarian}', 'RiwayatHarianController@update');
+Route::delete('/harian/{riwayatHarian}', 'RiwayatHarianController@store');
+// Route::post('/harian/cari', 'RiwayatHarianController@cari');
 
 Route::get('/bulanan', 'RiwayatHarianController@indexBulanan');

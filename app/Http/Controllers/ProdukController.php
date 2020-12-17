@@ -20,7 +20,7 @@ class ProdukController extends Controller
      */
     public function index()
     {
-        $produk = Produk::where('user_id', Auth::id())->orderBy('updated_at', 'desc')->paginate(10);
+        $produk = Produk::where('user_id', Auth::id())->orderBy('id', 'desc')->paginate(10);
         return view('produk/index', compact('produk'));
     }
 
@@ -54,7 +54,7 @@ class ProdukController extends Controller
             'modal' => $request->modal,
             'harga' => $request->harga,
             'jumlah' => $request->jumlah,
-            'keuntungan' => $request->harga-$request->modal,
+            'keuntungan' => $request->harga - $request->modal,
             'user_id' => Auth::id(),
         ]);
         return redirect('produk')->with('status', 'produk berhasil ditambahkan');
@@ -79,6 +79,9 @@ class ProdukController extends Controller
      */
     public function edit(Produk $produk)
     {
+        if ($produk->user_id != Auth::id()) {
+            return redirect('produk')->with('status', 'produk orang gagal diubah');
+        }
         return view('produk/edit', compact('produk'));
     }
 
@@ -97,21 +100,20 @@ class ProdukController extends Controller
             'harga' => 'required',
             'jumlah' => 'required',
         ]);
-        
-        if($produk->user_id != Auth::id()){
-        return redirect('produk')->with('status', 'produk orang gagal diubah');
+
+        if ($produk->user_id != Auth::id()) {
+            return redirect('produk')->with('status', 'produk orang gagal diubah');
         }
 
-            $produk->nama = $request->nama;
-            $produk->modal = $request->modal;
-            $produk->harga = $request->harga;
-            $produk->jumlah = $request->jumlah;
-            $produk->keuntungan = $request->harga-$request->modal;
-            $produk->user_id = Auth::id();
-            $produk->update();
-        
+        $produk->nama = $request->nama;
+        $produk->modal = $request->modal;
+        $produk->harga = $request->harga;
+        $produk->jumlah = $request->jumlah;
+        $produk->keuntungan = $request->harga - $request->modal;
+        $produk->user_id = Auth::id();
+        $produk->update();
+
         return redirect('produk')->with('status', 'produk berhasil diubah');
-        
     }
 
     /**
@@ -122,7 +124,23 @@ class ProdukController extends Controller
      */
     public function destroy(Produk $produk)
     {
+        if ($produk->user_id != Auth::id()) {
+            return redirect('produk')->with('status', 'produk orang gagal diubah');
+        }
+
         Produk::destroy($produk->id);
         return redirect('produk')->with('status', 'produk berhasil dihapus');
     }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function cari(Request $request)
+    {
+        $produk = Produk::where('user_id', Auth::id())->where('nama', 'like', '%'.$request->cari.'%')->orderBy('id', 'desc')->paginate(10);
+        return view('produk/index', compact('produk'));
+    }    
 }
