@@ -29,8 +29,8 @@ Route::put('/produk/{produk}', 'ProdukController@update');
 Route::delete('/produk/{produk}', 'ProdukController@destroy');
 Route::post('/produk/cari', 'ProdukController@cari');
 
-Route::get('/penjualan', 'RiwayatHarianController@penjualan');
-Route::post('/penjualan/cari', 'RiwayatHarianController@cariPenjualan');
+// Route::get('/penjualan', 'RiwayatHarianController@penjualan');
+// Route::post('/penjualan/cari', 'RiwayatHarianController@cariPenjualan');
 
 Route::get('/harian', 'RiwayatHarianController@index');
 Route::get('/harian/{produk}', 'RiwayatHarianController@create');
